@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Duolingo-Style Piano Tutor</title>
+<style>
+  body { margin: 0; font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #0b1c3a, #1e3a5f); color: #fff; overflow-x: hidden; }
+  h1,h2,h3,h4,h5,h6 { margin:0; }
+  button, select, input, textarea { font-family: 'Inter', sans-serif; }
+  .page { display: none; padding: 20px; min-height: 100vh; box-sizing: border-box; }
+  .active { display: block; animation: fadeIn 0.6s; }
+  @keyframes fadeIn { from {opacity:0;} to {opacity:1;} }
+  button { padding: 10px 16px; border-radius: 8px; border: none; cursor: pointer; margin:4px; background-color: #4a90e2; color: #fff; }
+  button:hover { background-color: #357ABD; }
+  #keyboard { display: flex; position: relative; user-select: none; margin-top: 20px; height: 180px; }
+  .key { flex: 1; border: 1px solid #222; background: linear-gradient(#1e3a5f, #0b1c3a); display: flex; align-items:flex-end; justify-content:center; padding-bottom:8px; border-radius: 0 0 6px 6px; position: relative; color: #fff; transition: all 0.2s ease; }
+  .key.black { background: #111; height: 120px; flex: 0 0 40px; margin:0 -20px; z-index:2; }
+  .key.highlight { box-shadow: 0 0 15px 5px #4a90e2; transform: scale(1.05); }
+  .key.correct { background-color: #2eb67d !important; }
+  .key.incorrect { background-color: #ff6b6b !important; }
+  .label { font-size:12px; opacity:0.9; }
+  #progressContainer { width:100%; background:#111; height:12px; border-radius:6px; margin-top:10px; }
+  #progressBar { height:100%; width:0%; background: linear-gradient(90deg, #2eb67d, #a8e6cf); border-radius:6px; transition: width 0.3s ease; }
+  .tooltip { position: relative; display:inline-block; cursor:pointer; }
+  .tooltip .tooltiptext { visibility: hidden; width: 180px; background-color: #222; color: #fff; text-align:center; border-radius: 6px; padding:5px; position: absolute; z-index:10; bottom:125%; left:50%; transform:translateX(-50%); opacity:0; transition: opacity 0.3s; }
+  .tooltip:hover .tooltiptext { visibility: visible; opacity:1; }
+  #character { width:120px; height:180px; background:#2e3a5f; border-radius:12px; margin:20px auto; position:relative; }
+  .avatar-part { position:absolute; }
+  #minigameContainer { margin-top:20px; }
+  .row { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .column { display:flex; flex-direction:column; gap:8px; }
+</style>
+</head>
+<body>
+<!-- ---------- HOME PAGE ---------- -->
+<div id="homePage" class="page active">
+  <h1>Welcome to Piano Tutor!</h1>
+  <button onclick="goToPage('calibrationPage')">Start Calibration</button>
+  <button onclick="goToPage('songSelectionPage')">Select Song</button>
+  <button onclick="goToPage('settingsPage')">Settings / Help</button>
+</div>
+
+<!-- ---------- CALIBRATION PAGE ---------- -->
+<div id="calibrationPage" class="page">
+  <h2>Calibration</h2>
+  <p>Choose calibration type:</p>
+  <button onclick="startCalibration('full')">Full Keyboard</button>
+  <button onclick="startCalibration('octave')">One Octave</button>
+  <div id="calibrationInstructions"></div>
+</div>
+
+<!-- ---------- SONG SELECTION PAGE ---------- -->
+<div id="songSelectionPage" class="page">
+  <h2>Select a Song</h2>
+  <select id="builtInSongs"></select>
+  <button onclick="startSong()">Start Song</button>
+  <h3>Add Custom Song</h3>
+  <textarea id="customSongInput" placeholder="C4 D4 E4 F4 G4"></textarea>
+  <button onclick="addCustomSong()">Add Song</button>
+</div>
+
+<!-- ---------- TEACHING PAGE ---------- -->
+<div id="teachingPage" class="page">
+  <h2 id="songTitle">Song Name</h2>
+  <div id="progressContainer"><div id="progressBar"></div></div>
+  <div id="keyboard"></div>
+  <div id="feedbackMessage"></div>
+  <div class="row">
+    <button onclick="goToPage('homePage')">Back</button>
+    <button onclick="skipNote()">Skip Note</button>
+    <button onclick="restartSong()">Restart Song</button>
+  </div>
+</div>
+
+<!-- ---------- SETTINGS PAGE ---------- -->
+<div id="settingsPage" class="page">
+  <h2>Settings & Help</h2>
+  <div class="row">
+    <label>Dark/Light Mode <input type="checkbox" id="themeToggle"></label>
+    <label>Show Note Labels <input type="checkbox" id="noteLabelToggle" checked></label>
+    <label>Metronome <input type="checkbox" id="metronomeToggle"></label>
+  </div>
+  <h3>Help / Tutorial</h3>
+  <p>Follow instructions for calibration, adding songs, and playing notes.</p>
+</div>
+<script>
+// ---------- GLOBAL VARIABLES ----------
+let currentPage = 'homePage';
+let calibrationData = {};
+let builtInSongs = {'Twinkle':'C4 C4 G4 G4 A4 A4 G4','Mary':'E4 D4 C4 D4 E4 E4 E4'};
+let customSongs = {};
+let currentSong = null;
+let currentNoteIndex = 0;
+let skipsAvailable = 5;
+let keys = ['C4','C#4','D4','D#4','E4','F4','F#4','G4','G#4','A4','A#4','B4','C5'];
+let metronomeInterval = null;
+
+// ---------- PAGE NAVIGATION ----------
+function goToPage(pageId){
+  document.getElementById(currentPage).classList.remove('active');
+  document.getElementById(pageId).classList.add('active');
+  currentPage = pageId;
+  if(pageId==='songSelectionPage') populateSongs();
+}
+
+// ---------- CALIBRATION ----------
+function startCalibration(type){
+  document.getElementById('calibrationInstructions').innerText = 'Calibration started: '+type;
+  // placeholder for actual pitch-detection calibration
+  setTimeout(()=>{
+    alert('Calibration complete!');
+    saveData();
+    goToPage('songSelectionPage');
+  },2000);
+}
+
+// ---------- SONG SELECTION ----------
+function populateSongs(){
+  let select = document.getElementById('builtInSongs');
+  select.innerHTML = '';
+  for(let s in builtInSongs){
+    let opt = document.createElement('option');
+    opt.value = s;
+    opt.text = s;
+    select.add(opt);
+  }
+  for(let s in customSongs){
+    let opt = document.createElement('option');
+    opt.value = s;
+    opt.text = s+' (Custom)';
+    select.add(opt);
+  }
+}
+
+function addCustomSong(){
+  let input = document.getElementById('customSongInput').value.trim();
+  if(input){
+    customSongs['Custom '+(Object.keys(customSongs).length+1)] = input;
+    saveData();
+    populateSongs();
+  }
+}
+
+function startSong(){
+  let select = document.getElementById('builtInSongs');
+  currentSong = select.value;
+  currentNoteIndex = 0;
+  skipsAvailable = 5;
+  document.getElementById('songTitle').innerText = currentSong;
+  goToPage('teachingPage');
+  renderKeyboard();
+  showNextNote();
+}
+
+// ---------- VIRTUAL KEYBOARD ----------
+function renderKeyboard(){
+  let container = document.getElementById('keyboard');
+  container.innerHTML = '';
+  keys.forEach(k=>{
+    let div = document.createElement('div');
+    div.className = 'key';
+    if(k.includes('#')) div.className += ' black';
+    div.innerHTML = '<span class="label">'+k+'</span>';
+    div.id = 'key-'+k;
+    container.appendChild(div);
+  });
+}
+// ---------- TEACHING LOGIC ----------
+function showNextNote(){
+  let songData = builtInSongs[currentSong] || customSongs[currentSong];
+  let notes = songData.split(' ');
+  if(currentNoteIndex >= notes.length){
+    document.getElementById('feedbackMessage').innerText = '🎉 Song Completed! 🎉';
+    saveData();
+    return;
+  }
+  highlightKey(notes[currentNoteIndex]);
+}
+
+function highlightKey(note){
+  keys.forEach(k=>{
+    let el = document.getElementById('key-'+k);
+    el.classList.remove('highlight','correct','incorrect');
+  });
+  let keyDiv = document.getElementById('key-'+note);
+  if(keyDiv) keyDiv.classList.add('highlight');
+  document.getElementById('feedbackMessage').innerText = 'Play: '+note;
+}
+
+// ---------- SKIP NOTE ----------
+function skipNote(){
+  if(skipsAvailable > 0){
+    skipsAvailable--;
+    currentNoteIndex++;
+    showNextNote();
+  } else {
+    alert('No skips left! Earn more by completing songs.');
+  }
+}
+
+// ---------- RESTART SONG ----------
+function restartSong(){
+  currentNoteIndex = 0;
+  skipsAvailable = 5;
+  showNextNote();
+  document.getElementById('progressBar').style.width = '0%';
+}
+
+// ---------- UPDATE PROGRESS BAR ----------
+function updateProgress(){
+  let songData = builtInSongs[currentSong] || customSongs[currentSong];
+  let notes = songData.split(' ');
+  let progress = ((currentNoteIndex)/notes.length)*100;
+  document.getElementById('progressBar').style.width = progress+'%';
+}
+
+// ---------- FEEDBACK FOR CORRECT/INCORRECT ----------
+function markNotePlayed(note, correct){
+  let keyDiv = document.getElementById('key-'+note);
+  if(!keyDiv) return;
+  if(correct){
+    keyDiv.classList.add('correct');
+    setTimeout(()=>{ keyDiv.classList.remove('correct'); currentNoteIndex++; showNextNote(); updateProgress(); }, 300);
+  } else {
+    keyDiv.classList.add('incorrect');
+    document.getElementById('feedbackMessage').innerText = '❌ Try Again!';
+    setTimeout(()=>{ keyDiv.classList.remove('incorrect'); }, 500);
+  }
+}
+// ---------- REAL-TIME NOTE LISTENING (SIMULATED) ----------
+function listenForNoteInput(notePlayed){
+  // In a real app, this would use Web Audio API pitch detection
+  // Here we simulate by passing the note name
+  let songData = builtInSongs[currentSong] || customSongs[currentSong];
+  let notes = songData.split(' ');
+  let expectedNote = notes[currentNoteIndex];
+  if(notePlayed === expectedNote){
+    markNotePlayed(notePlayed, true);
+  } else {
+    markNotePlayed(notePlayed, false);
+  }
+}
+
+// ---------- METRONOME PLACEHOLDER ----------
+function startMetronome(bpm=60){
+  if(metronomeInterval) clearInterval(metronomeInterval);
+  let interval = 60000 / bpm;
+  metronomeInterval = setInterval(()=>{
+    console.log('Metronome tick'); // replace with audio click
+  }, interval);
+}
+function stopMetronome(){
+  if(metronomeInterval) clearInterval(metronomeInterval);
+}
+
+// ---------- LOCAL STORAGE & AUTO-SAVE ----------
+function saveData(){
+  let data = {
+    calibrationData: calibrationData,
+    customSongs: customSongs,
+    progress: { currentSong, currentNoteIndex, skipsAvailable }
+  };
+  localStorage.setItem('pianoTutorData', JSON.stringify(data));
+}
+
+function loadData(){
+  let data = JSON.parse(localStorage.getItem('pianoTutorData'));
+  if(data){
+    calibrationData = data.calibrationData || {};
+    customSongs = data.customSongs || {};
+    if(data.progress){
+      currentSong = data.progress.currentSong || null;
+      currentNoteIndex = data.progress.currentNoteIndex || 0;
+      skipsAvailable = data.progress.skipsAvailable || 5;
+    }
+  }
+}
+
+// Auto-save every 2 minutes
+setInterval(saveData, 120000);
+
+// ---------- INITIALIZATION ----------
+window.onload = function(){
+  loadData();
+  populateSongs();
+  renderKeyboard();
+  document.getElementById('themeToggle').addEventListener('change', toggleTheme);
+}
+
+// ---------- THEME TOGGLE ----------
+function toggleTheme(){
+  let checked = document.getElementById('themeToggle').checked;
+  if(checked){
+    document.body.style.background = '#0b1c3a';
+  } else {
+    document.body.style.background = '#1e3a5f';
+  }
+}
+
+// ---------- EXAMPLE OF SIMULATED KEY PRESS ----------
+document.addEventListener('keydown', function(e){
+  // Map some keyboard keys to notes (example only)
+  let keyMap = { 'a':'C4','w':'C#4','s':'D4','e':'D#4','d':'E4','f':'F4','t':'F#4','g':'G4','y':'G#4','h':'A4','u':'A#4','j':'B4','k':'C5' };
+  if(keyMap[e.key]) listenForNoteInput(keyMap[e.key]);
+});
+// ---------- GAMIFICATION ----------
+let achievements = { songsCompleted:0, streak:0, skipsUsed:0 };
+let level = 1;
+
+function completeNote(){
+  achievements.streak++;
+  updateLevel();
+}
+
+function updateLevel(){
+  level = Math.floor(achievements.streak / 10) + 1;
+  document.getElementById('feedbackMessage').innerText += ' | Level: '+level;
+}
+
+function completeSong(){
+  achievements.songsCompleted++;
+  achievements.streak += currentNoteIndex; 
+  alert('🎉 Song Completed! Achievements updated.');
+  updateLevel();
+}
+
+// ---------- CHARACTER / AVATAR CUSTOMIZATION ----------
+let avatar = { head:'blue', body:'green', accessory:'none' };
+function customizeAvatar(part,color){
+  avatar[part] = color;
+  renderAvatar();
+}
+
+function renderAvatar(){
+  let charDiv = document.getElementById('character');
+  charDiv.innerHTML = '';
+  let head = document.createElement('div');
+  head.style.background = avatar.head; head.style.width='60px'; head.style.height='60px';
+  head.style.borderRadius='50%'; head.style.position='absolute'; head.style.top='0'; head.style.left='30px';
+  charDiv.appendChild(head);
+  
+  let body = document.createElement('div');
+  body.style.background = avatar.body; body.style.width='60px'; body.style.height='100px';
+  body.style.position='absolute'; body.style.bottom='0'; body.style.left='30px';
+  charDiv.appendChild(body);
+}
+
+// ---------- MINI-GAME PLACEHOLDER ----------
+function startMiniGame(){
+  let container = document.getElementById('minigameContainer');
+  container.innerHTML = '<p>Mini-game: Catch the notes! (Coming Soon)</p>';
+}
+
+// ---------- REWARDS ----------
+function earnSkip(){
+  skipsAvailable += 5;
+  alert('You earned 5 skips!');
+}
+
+// ---------- UTILITY ----------
+function simulatePlaySong(songName){
+  currentSong = songName;
+  currentNoteIndex = 0;
+  showNextNote();
+}
+
+// ---------- SAMPLE USAGE ----------
+// Uncomment to simulate starting Twinkle
+// simulatePlaySong('Twinkle');
