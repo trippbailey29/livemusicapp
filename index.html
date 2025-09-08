@@ -1,1007 +1,934 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Piano Tutor — Luxe Dark</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Piano Tutor (Live)</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #0a0f1a;
+      color: #f0f4ff;
+    }
+    nav {
+      background: #101830;
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    nav h1 { color: #5dade2; margin: 0; }
+    nav ul { list-style: none; display: flex; gap: 15px; margin: 0; padding: 0; }
+    nav ul li a { color: #f0f4ff; text-decoration: none; }
+    nav ul li a:hover { text-decoration: underline; }
 
-<!-- Fonts (system fallback) -->
-<style>
-  :root{
-    --bg-0: #061426;
-    --bg-1: linear-gradient(135deg,#07192f 0%, #122a4b 60%);
-    --card: rgba(255,255,255,0.03);
-    --accent: #6c8cff;
-    --accent-2: #3ad0a3;
-    --muted: rgba(255,255,255,0.6);
-    --glass: rgba(255,255,255,0.04);
-    --danger: #ff6b6b;
-    --success: #2eb67d;
-    --shadow: 0 8px 30px rgba(4,8,20,0.6);
-  }
+    section { display: none; padding: 20px; }
+    section.active { display: block; }
 
-  /* Reset & layout */
-  *{box-sizing:border-box}
-  html,body{height:100%;margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial; background:var(--bg-1); color:#ecf2ff; -webkit-font-smoothing:antialiased}
-  a{color:inherit;text-decoration:none}
-
-  /* Top nav */
-  .topbar{
-    position:fixed; inset:0 0 auto 0; height:72px; display:flex; align-items:center; gap:18px; padding:12px 20px;
-    background: linear-gradient(180deg, rgba(10,20,40,0.32), rgba(6,12,24,0.18));
-    backdrop-filter: blur(6px);
-    box-shadow: var(--shadow);
-    z-index:1000;
-  }
-  .brand{display:flex;align-items:center;gap:12px}
-  .logo{
-    width:48px;height:48px;border-radius:10px;
-    background:linear-gradient(135deg,#5d7bff,#2bb7a3);
-    display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;color:#fff;
-    box-shadow:0 6px 18px rgba(64,97,255,0.18);
-  }
-  .brand .title{font-size:18px;font-weight:700;letter-spacing:0.2px;}
-  .nav-actions{margin-left:auto;display:flex;gap:8px;align-items:center}
-
-  .nav-actions button{
-    background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted);padding:8px 12px;border-radius:10px;
-  }
-  .nav-actions button.primary{background:linear-gradient(90deg,var(--accent),#3ea1ff);color:#fff;border:none;box-shadow:0 6px 18px rgba(80,110,255,0.12)}
-  .nav-actions .switch{display:flex;align-items:center;gap:8px;padding:8px;border-radius:8px;background:var(--glass);border:1px solid rgba(255,255,255,0.02)}
-  .nav-actions .pill{padding:6px 10px;border-radius:999px;background:rgba(255,255,255,0.03);font-size:13px}
-
-  /* App container */
-  .app{
-    max-width:1200px;margin:110px auto 60px;padding:28px; /* leave space for topbar */
-    display:grid;grid-template-columns: 320px 1fr; gap:20px;
-  }
-
-  /* Left column (sidebar) */
-  .sidebar{
-    background:var(--card);border-radius:14px;padding:18px;box-shadow:var(--shadow);
-    min-height:420px; display:flex;flex-direction:column;gap:12px;
-  }
-  .sidebar h3{margin:0 0 6px 0;font-size:14px;color:#eaffff}
-  .song-list{display:flex;flex-direction:column;gap:8px;overflow:auto;max-height:420px;padding-right:6px}
-  .song-card{
-    display:flex;align-items:center;justify-content:space-between;padding:10px;border-radius:10px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-    border:1px solid rgba(255,255,255,0.02);
-  }
-  .song-card .meta{font-size:13px;color:var(--muted)}
-
-  /* Right column (main) */
-  .main{
-    background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:14px;padding:18px;
-    box-shadow:var(--shadow); min-height:420px; display:flex;flex-direction:column;
-  }
-
-  .main .header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
-  .main h2{margin:0;font-size:20px}
-  .controls{margin-left:auto;display:flex;gap:8px;align-items:center}
-
-  /* Progress + feedback card */
-  .statusbar{display:flex;align-items:center;gap:12px;padding:12px;border-radius:12px;background:linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border:1px solid rgba(255,255,255,0.02)}
-  .progress-outer{flex:1;background:rgba(0,0,0,0.25);height:12px;border-radius:10px;overflow:hidden;border:1px solid rgba(255,255,255,0.03)}
-  .progress-inner{height:100%;width:0%;background:linear-gradient(90deg,var(--accent-2),var(--accent)); transition:width:300ms ease}
-
-  .feedback{
-    min-width:220px;padding:10px;border-radius:10px;background:rgba(0,0,0,0.28);display:flex;align-items:center;gap:8px;border:1px solid rgba(255,255,255,0.02)
-  }
-  .feedback .big{font-weight:700;color:#fff}
-
-  /* Piano area card */
-  .piano-card{margin-top:14px;padding:14px;border-radius:12px;background:linear-gradient(180deg,#071827 0%, #071323 60%);box-shadow:0 6px 18px rgba(5,12,28,0.6); border:1px solid rgba(255,255,255,0.03)}
-  .keyboard-wrap{position:relative;padding:18px;display:flex;align-items:flex-end;justify-content:center;overflow:hidden}
-
-  /* keyboard layout - two octaves by default (adjust with JS) */
-  .piano{position:relative;height:220px;display:flex;align-items:flex-end;user-select:none}
-  .white-key{
-    width:72px;height:220px;border-radius:6px 6px 4px 4px;margin-right:6px;background:linear-gradient(180deg,#f8fbff,#e9f1ff);color:#041028;display:flex;align-items:flex-end;justify-content:center;padding-bottom:10px;font-weight:600;box-shadow:0 8px 18px rgba(8,12,28,0.12);position:relative;z-index:1;transition:transform 140ms ease, box-shadow 140ms ease;
-  }
-  .white-key.small{width:60px}
-  .white-key.label-hidden { color: transparent; opacity:0.95 }
-  .white-key.pressed{ transform: translateY(6px); box-shadow:0 2px 8px rgba(8,12,28,0.12) }
-
-  .black-key{
-    position:absolute;height:140px;width:44px;background:linear-gradient(180deg,#0b1016,#07070a);border-radius:6px;top:6px;z-index:5;box-shadow:0 8px 22px rgba(0,0,0,0.6);transform-origin:center bottom;transition: transform 110ms cubic-bezier(.2,.9,.2,1), box-shadow 110ms;
-    display:flex;align-items:flex-end;justify-content:center;padding-bottom:10px;color:#fff;font-weight:700;
-  }
-  .black-key.pressed{ transform: translateY(8px) scale(0.99); box-shadow:0 2px 8px rgba(0,0,0,0.5) }
-
-  /* Key highlights (correct/incorrect colors) */
-  .key-highlight-correct{ box-shadow: 0 0 24px 6px rgba(46,182,125,0.14), inset 0 0 12px rgba(46,182,125,0.06) !important; border:1px solid rgba(46,182,125,0.12); }
-  .key-highlight-wrong{ box-shadow: 0 0 22px 6px rgba(255,107,107,0.12), inset 0 0 6px rgba(255,107,107,0.04) !important; border:1px solid rgba(255,107,107,0.08); }
-
-  /* small helper / previews */
-  .next-preview{display:flex;gap:8px;align-items:center}
-  .preview-note{padding:6px 8px;border-radius:8px;background:rgba(255,255,255,0.02);font-weight:700}
-
-  /* responsive */
-  @media(max-width:1000px){
-    .app{grid-template-columns: 1fr; padding:18px; margin-top:90px}
-    .sidebar{order:2}
-    .main{order:1}
-    .piano{height:160px}
-    .white-key{width:56px;height:160px}
-    .black-key{height:100px;width:38px}
-  }
-</style>
+    .mic-status {
+      margin-top: 20px;
+      padding: 10px;
+      border-radius: 8px;
+      background: #101830;
+      display: inline-block;
+    }
+    .mic-status.active { color: #2ecc71; }
+    .mic-status.inactive { color: #e74c3c; }
+  </style>
 </head>
 <body>
+  <!-- Navigation -->
+  <nav>
+    <h1>🎹 Piano Tutor</h1>
+    <ul>
+      <li><a href="#" onclick="showPage('home')">Home</a></li>
+      <li><a href="#" onclick="showPage('calibration')">Calibration</a></li>
+      <li><a href="#" onclick="showPage('lessons')">Lessons</a></li>
+      <li><a href="#" onclick="showPage('songs')">Songs</a></li>
+      <li><a href="#" onclick="showPage('settings')">Settings</a></li>
+    </ul>
+  </nav>
 
-<!-- TOP NAV -->
-<header class="topbar">
-  <div class="brand">
-    <div class="logo">PT</div>
-    <div class="title">Piano Tutor</div>
-    <div style="font-size:12px;color:var(--muted)">Learn piano step-by-step • Luxurious dark theme</div>
-  </div>
-
-  <div class="nav-actions">
-    <div class="pill">Streak: <strong style="margin-left:8px">0</strong></div>
-    <button class="primary" onclick="goToPage('songSelection')">Start Lesson</button>
-    <div class="switch">
-      <label style="font-size:13px;color:var(--muted)">Metronome</label>
-      <input id="metronomeToggleTop" type="checkbox" style="transform:scale(1.1)">
-    </div>
-  </div>
-</header>
-
-<!-- APP GRID -->
-<main class="app">
-  <!-- SIDEBAR -->
-  <aside class="sidebar">
-    <h3>Song Library</h3>
-    <div class="song-list" id="songList">
-      <!-- JS will populate song cards here -->
-      <div class="song-card">
-        <div>
-          <div style="font-weight:700">Twinkle Twinkle</div>
-          <div class="meta">Beginner • 15 notes</div>
-        </div>
-        <div><button onclick="startQuick('Twinkle')">Play</button></div>
-      </div>
-
-      <div class="song-card">
-        <div>
-          <div style="font-weight:700">Mary Had a Little Lamb</div>
-          <div class="meta">Beginner • 12 notes</div>
-        </div>
-        <div><button onclick="startQuick('Mary')">Play</button></div>
-      </div>
-
-    </div>
-
-    <div style="margin-top:12px">
-      <h3>Quick Actions</h3>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button onclick="goToPage('calibration')">Calibrate</button>
-        <button onclick="goToPage('settings')">Settings</button>
-        <button onclick="goToPage('avatar')">Avatar</button>
-      </div>
-    </div>
-  </aside>
-
-  <!-- MAIN -->
-  <section class="main">
-    <div class="header">
-      <div>
-        <h2 id="mainSongTitle">Select or Start a Lesson</h2>
-        <div style="font-size:13px;color:var(--muted)">Step-by-step guidance — wait for correct note to advance</div>
-      </div>
-
-      <div class="controls">
-        <div class="statusbar">
-          <div style="width:220px;font-size:13px;color:var(--muted);margin-right:8px">Progress</div>
-          <div class="progress-outer"><div id="progressInner" class="progress-inner"></div></div>
-        </div>
-        <div class="feedback" style="margin-left:12px">
-          <div id="feedbackBig" class="big">Ready</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- PIANO CARD -->
-    <div class="piano-card">
-      <div class="keyboard-wrap">
-        <!-- JS will render .piano with white-key and black-key elements -->
-        <div id="piano" class="piano" aria-hidden="false">
-          <!-- Example static keys for preview (JS will generate actual keys) -->
-          <div class="white-key" data-note="C4"><div class="label">C4</div></div>
-          <div class="white-key" data-note="D4"><div class="label">D4</div></div>
-          <div class="white-key" data-note="E4"><div class="label">E4</div></div>
-          <div class="white-key" data-note="F4"><div class="label">F4</div></div>
-          <div class="white-key" data-note="G4"><div class="label">G4</div></div>
-          <div class="white-key" data-note="A4"><div class="label">A4</div></div>
-          <div class="white-key" data-note="B4"><div class="label">B4</div></div>
-          <div class="white-key" data-note="C5"><div class="label">C5</div></div>
-
-          <!-- black keys positioned absolutely by JS for exact spacing -->
-          <div class="black-key" data-note="C#4" style="left:66px">C#4</div>
-          <div class="black-key" data-note="D#4" style="left:142px">D#4</div>
-          <div class="black-key" data-note="F#4" style="left:294px">F#4</div>
-          <div class="black-key" data-note="G#4" style="left:370px">G#4</div>
-          <div class="black-key" data-note="A#4" style="left:446px">A#4</div>
-
-        </div>
-      </div>
-
-      <!-- Next notes preview -->
-      <div style="margin-top:12px;display:flex;align-items:center;justify-content:space-between">
-        <div class="next-preview">
-          <div style="color:var(--muted)">Next:</div>
-          <div id="previewNotes" style="display:flex;gap:8px">
-            <div class="preview-note">C4</div>
-            <div class="preview-note">G4</div>
-          </div>
-        </div>
-
-        <div style="display:flex;gap:8px;align-items:center">
-          <button onclick="skipNote()" style="background:transparent;border:1px solid rgba(255,255,255,0.04)">Skip</button>
-          <button onclick="restartSong()" style="background:transparent;border:1px solid rgba(255,255,255,0.04)">Restart</button>
-        </div>
-      </div>
-
-    </div>
-
-    <!-- Stats / Achievements row -->
-    <div style="display:flex;gap:12px;margin-top:16px;flex-wrap:wrap">
-      <div style="flex:1;min-width:200px;padding:14px;border-radius:12px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.02)">
-        <div style="font-size:13px;color:var(--muted)">Accuracy</div>
-        <div style="font-weight:800;font-size:18px">0%</div>
-      </div>
-
-      <div style="flex:1;min-width:200px;padding:14px;border-radius:12px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.02)">
-        <div style="font-size:13px;color:var(--muted)">Streak</div>
-        <div style="font-weight:800;font-size:18px">0</div>
-      </div>
-
-    </div>
-
+  <!-- Home Section -->
+  <section id="home" class="active">
+    <h2>Welcome to Piano Tutor</h2>
+    <p>This app listens to your piano live 🎶. Get ready to practice!</p>
+    <div class="mic-status inactive" id="micStatus">🎤 Microphone: Off</div>
   </section>
 
-</main>
-<script>
-/* ===========================
-   Block 2 — Refined JavaScript
-   =========================== */
+  <!-- Placeholder Sections -->
+  <section id="calibration"><h2>Calibration (coming in Block 2)</h2></section>
+  <section id="lessons"><h2>Lessons (coming soon)</h2></section>
+  <section id="songs"><h2>Songs (coming soon)</h2></section>
+  <section id="settings"><h2>Settings (coming soon)</h2></section>
 
-/* ---------- Global state ---------- */
-const STATE = {
-  page: 'home',              // current page id (not required to match earlier CSS ids)
-  songs: {
-    'Twinkle Twinkle': { notes: 'C4 C4 G4 G4 A4 A4 G4', length: 7 },
-    'Mary Had A Little Lamb': { notes: 'E4 D4 C4 D4 E4 E4 E4', length: 7 }
-  },
-  customSongs: {},
-  currentSong: null,
-  noteIndex: 0,
-  visibleOctaves: 2,         // number of octaves to render in piano
-  baseOctave: 4,             // starting octave (C4..)
-  whiteKeyWidth: 72,         // default — will adapt on small screens
-  pianoElement: null,
-  progressElement: null,
-  feedbackElement: null,
-  previewElement: null,
-  metronomeTick: null,
-  metronomeBpm: 60,
-  skips: 5,
-  streak: 0,
-  accuracy: { correct: 0, total: 0 },
-  calibration: { mode: null, map: {} },
-  difficulty: { tolerance: 0.5, auto: true }, // placeholder
-  achievements: {},
-  avatar: { head:'#7f8cff', body:'#3ad0a3', accessory:'none' },
-  autosaveTimer: null
-};
-
-/* ---------- Utility: Note helpers ---------- */
-const SEMITONES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
-
-function noteToIndex(note){
-  // note like C4 -> returns absolute semitone index relative to C0
-  const m = note.match(/^([A-G]#?)(-?\d+)$/i);
-  if(!m) return null;
-  const pitch = m[1].toUpperCase();
-  const octave = parseInt(m[2],10);
-  const semitone = SEMITONES.indexOf(pitch);
-  return (octave * 12) + semitone;
-}
-
-function indexToNote(index){
-  const octave = Math.floor(index / 12);
-  const pitch = SEMITONES[index % 12];
-  return `${pitch}${octave}`;
-}
-
-/* Build a contiguous list of notes for rendering across octaves */
-function buildKeyList(baseOctave, octaves){
-  const notes = [];
-  const startIndex = baseOctave * 12;
-  for(let i=0;i<octaves*12;i++){
-    notes.push(indexToNote(startIndex + i));
-  }
-  return notes;
-}
-
-/* ---------- DOM & rendering ---------- */
-
-/* get cached elements and initialize */
-function initUI(){
-  STATE.pianoElement = document.getElementById('piano');
-  STATE.progressElement = document.getElementById('progressInner');
-  STATE.feedbackElement = document.getElementById('feedbackBig');
-  STATE.previewElement = document.getElementById('previewNotes');
-
-  // wire top-level nav buttons (if they exist)
-  const metToggle = document.getElementById('metronomeToggleTop');
-  if(metToggle) metToggle.addEventListener('change', e => {
-    if(e.target.checked) startMetronome(STATE.metronomeBpm); else stopMetronome();
-  });
-
-  // load saved data if any
-  loadFromStorage();
-
-  // responsive compute key width based on piano container
-  window.addEventListener('resize', () => { window.requestAnimationFrame(renderPiano); });
-
-  // simulate a few default actions
-  renderSongList();
-  renderPiano();
-  updateHeaderStats();
-  startAutoSave();
-}
-
-/* create white and black keys, positioned properly */
-function renderPiano(){
-  if(!STATE.pianoElement) return;
-  STATE.pianoElement.innerHTML = '';
-
-  // choose width based on container
-  const container = STATE.pianoElement.parentElement;
-  const containerWidth = Math.max(container.clientWidth - 40, 480); // pad
-  const whiteKeysCount = STATE.visibleOctaves * 7; // 7 white keys per octave
-  STATE.whiteKeyWidth = Math.floor((containerWidth - ((whiteKeysCount-1) * 6)) / whiteKeysCount);
-
-  const keyList = buildKeyList(STATE.baseOctave, STATE.visibleOctaves);
-
-  // create white key elements (in flow)
-  const whiteKeyEls = [];
-  for(let i=0;i<keyList.length;i++){
-    const note = keyList[i];
-    // white keys are notes without '#'
-    if(note.includes('#')) continue;
-    const wk = document.createElement('div');
-    wk.className = 'white-key';
-    wk.style.width = STATE.whiteKeyWidth + 'px';
-    wk.dataset.note = note;
-    wk.setAttribute('role','button');
-    wk.innerHTML = `<div class="label">${note}</div>`;
-    // events
-    wk.addEventListener('pointerdown', onVirtualKeyDown);
-    wk.addEventListener('pointerup', onVirtualKeyUp);
-    wk.addEventListener('pointerleave', onVirtualKeyUp);
-    STATE.pianoElement.appendChild(wk);
-    whiteKeyEls.push(wk);
-  }
-
-  // position black keys absolutely on top of white keys
-  // we need exact left offsets: sum of widths + margins
-  // iterate white keys and calculate positions for sharps between them
-  let left = 0;
-  const gap = 6; // margin-right used in CSS
-  for(let i=0;i<whiteKeyEls.length;i++){
-    const wk = whiteKeyEls[i];
-    const wkNote = wk.dataset.note;
-    const wkIndex = noteToIndex(wkNote);
-    // for a given white note, there may be a black note after it except for E and B
-    const blackAfter = (() => {
-      const pitch = wkNote.replace(/\d+$/,'');
-      return (pitch !== 'E' && pitch !== 'B');
-    })();
-    // move left for current position
-    const leftPos = left;
-    left += STATE.whiteKeyWidth + gap;
-
-    if(blackAfter){
-      // the black key is between this white and next white; compute center offset
-      const black = document.createElement('div');
-      black.className = 'black-key';
-      black.dataset.note = `${SEMITONES[(wkIndex % 12) + 1] || '??'}${Math.floor(wkIndex / 12)}`;
-      // center it roughly at 66% of this white key width
-      const offset = Math.round(leftPos + STATE.whiteKeyWidth - (STATE.whiteKeyWidth * 0.38));
-      black.style.left = offset + 'px';
-      black.innerHTML = black.dataset.note;
-      black.addEventListener('pointerdown', onVirtualKeyDown);
-      black.addEventListener('pointerup', onVirtualKeyUp);
-      black.addEventListener('pointerleave', onVirtualKeyUp);
-      STATE.pianoElement.appendChild(black);
+  <script>
+    // Page switching
+    function showPage(id) {
+      document.querySelectorAll("section").forEach(sec => sec.classList.remove("active"));
+      document.getElementById(id).classList.add("active");
     }
-  }
 
-  // ensure piano area height classes adapt (smaller screens handled via CSS)
-}
+    // Audio setup
+    let audioContext, analyser, dataArray;
 
-/* ---------- Virtual key handlers (mouse / touch) ---------- */
-function onVirtualKeyDown(evt){
-  const el = evt.currentTarget;
-  el.classList.add('pressed');
-  const note = el.dataset.note;
-  // visual feedback only (user wanted visual-only)
-  // emulate playing via listenForNote (which in real app is mic detection)
-  listenForNoteInput(note);
-}
+    async function initMic() {
+      try {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const source = audioContext.createMediaStreamSource(stream);
+        analyser = audioContext.createAnalyser();
+        source.connect(analyser);
+        analyser.fftSize = 2048;
+        dataArray = new Float32Array(analyser.fftSize);
 
-function onVirtualKeyUp(evt){
-  const el = evt.currentTarget;
-  if(el) el.classList.remove('pressed');
-}
+        document.getElementById("micStatus").textContent = "🎤 Microphone: On";
+        document.getElementById("micStatus").className = "mic-status active";
 
-/* ---------- Song list rendering & quick start ---------- */
-function renderSongList(){
-  const list = document.getElementById('songList');
-  if(!list) return;
-  list.innerHTML = '';
-  // built-in songs
-  Object.keys(STATE.songs).forEach(name => {
-    const song = STATE.songs[name];
-    const card = document.createElement('div');
-    card.className = 'song-card';
-    card.innerHTML = `<div><div style="font-weight:700">${name}</div><div class="meta">Notes: ${song.notes.split(' ').length}</div></div>
-                      <div><button onclick="startQuick('${escapeHtml(name)}')">Play</button></div>`;
-    list.appendChild(card);
-  });
-  // custom songs
-  Object.keys(STATE.customSongs).forEach(name => {
-    const song = STATE.customSongs[name];
-    const card = document.createElement('div');
-    card.className = 'song-card';
-    card.innerHTML = `<div><div style="font-weight:700">${name}</div><div class="meta">Custom • Notes: ${song.notes.split(' ').length}</div></div>
-                      <div><button onclick="startQuick('${escapeHtml(name)}')">Play</button></div>`;
-    list.appendChild(card);
-  });
-}
-
-/* safe string for inline onclick */
-function escapeHtml(s){
-  return String(s).replace(/'/g,"\\'");
-}
-
-/* quick start a lesson */
-function startQuick(songName){
-  // call from inline onclick — unescape
-  songName = songName.replace(/\\'/g,"'");
-  STATE.currentSong = songName;
-  STATE.noteIndex = 0;
-  STATE.skips = 5;
-  document.getElementById('mainSongTitle').innerText = songName;
-  updatePreview();
-  updateProgress();
-  renderPiano(); // highlight first
-  showNextExpected();
-  goToPage('main'); // ensure main view visible
-}
-
-/* ---------- Page switching ---------- */
-function goToPage(page){
-  // simple visual page toggles for top-level areas: 'main','calibration','settings','avatar'
-  const pages = {
-    main: document.querySelector('.main'),
-    calibration: document.getElementById('calibrationPage'),
-    settings: document.getElementById('settingsPage'),
-    avatar: document.getElementById('characterPage'),
-    home: document.getElementById('homePage')
-  };
-  // hide all page-areas that exist
-  for(const k in pages){
-    if(!pages[k]) continue;
-    pages[k].style.display = 'none';
-  }
-  // show requested
-  if(pages[page]) pages[page].style.display = 'block';
-  STATE.page = page;
-}
-
-/* ---------- Show expected note visually ---------- */
-function showNextExpected(){
-  clearAllHighlights();
-  const notesStr = (STATE.songs[STATE.currentSong] || STATE.customSongs[STATE.currentSong] || {}).notes || '';
-  if(!notesStr) { STATE.feedbackElement.innerText = 'No song data'; return; }
-  const notes = notesStr.split(' ');
-  if(STATE.noteIndex >= notes.length){
-    onSongComplete();
-    return;
-  }
-  const expected = notes[STATE.noteIndex];
-  highlightExpectedKey(expected);
-  STATE.feedbackElement.innerText = `Play: ${expected}`;
-  updatePreview();
-}
-
-/* clear existing highlight classes */
-function clearAllHighlights(){
-  Array.from(document.querySelectorAll('.white-key, .black-key')).forEach(k => {
-    k.classList.remove('key-highlight-correct','key-highlight-wrong','expected','pressed');
-  });
-}
-
-/* highlight expected key(s) — supports single notes or comma-separated chords */
-function highlightExpectedKey(note){
-  // allow chords like "C4,E4,G4" or single note "C4"
-  const notes = (''+note).split(',');
-  notes.forEach(n => {
-    const keyEl = findKeyElement(n);
-    if(keyEl) keyEl.classList.add('expected');
-  });
-}
-
-/* find key element by data-note attribute */
-function findKeyElement(note){
-  return document.querySelector(`[data-note='${note}']`);
-}
-
-/* update the preview area with next few notes */
-function updatePreview(count=4){
-  const preview = STATE.previewElement;
-  if(!preview) return;
-  preview.innerHTML = '';
-  const notesStr = (STATE.songs[STATE.currentSong] || STATE.customSongs[STATE.currentSong] || {}).notes || '';
-  const notes = notesStr.split(' ');
-  for(let i=STATE.noteIndex; i<Math.min(notes.length, STATE.noteIndex + count); i++){
-    const d = document.createElement('div');
-    d.className = 'preview-note';
-    d.innerText = notes[i];
-    preview.appendChild(d);
-  }
-}
-
-/* ---------- Listening & matching logic (simulated placeholder) ---------- */
-/* In production, replace listenForNoteInput with microphone pitch detection and mapping
-   to the calibrated note frequencies. For now, we accept virtual key clicks and mapped keyboard keys. */
-
-function listenForNoteInput(notePlayed){
-  // increment total attempts
-  STATE.accuracy.total++;
-  const songObj = STATE.songs[STATE.currentSong] || STATE.customSongs[STATE.currentSong];
-  if(!songObj) return;
-  const expected = (songObj.notes.split(' '))[STATE.noteIndex];
-  // if chord (comma-separated), accept when all notes in chord are hit (not implemented yet)
-  if(notePlayed === expected){
-    STATE.accuracy.correct++;
-    onCorrect(notePlayed);
-  } else {
-    onIncorrect(notePlayed);
-  }
-  updateProgress();
-}
-
-/* Called when player hits correct expected note */
-function onCorrect(note){
-  // find element and mark correct
-  const el = findKeyElement(note);
-  if(el){
-    el.classList.add('key-highlight-correct');
-    setTimeout(()=> el.classList.remove('key-highlight-correct'), 350);
-  }
-  STATE.noteIndex++;
-  STATE.streak++;
-  updateHeaderStats();
-  // adaptive difficulty hook
-  adaptiveAdjust(true);
-  // move on after a short animation pause
-  setTimeout(()=> {
-    updateProgress(); showNextExpected();
-  }, 300);
-}
-
-/* Called when player hits wrong note */
-function onIncorrect(note){
-  const el = findKeyElement(note);
-  if(el){
-    el.classList.add('key-highlight-wrong');
-    setTimeout(()=> el.classList.remove('key-highlight-wrong'), 500);
-  }
-  STATE.streak = 0;
-  updateHeaderStats();
-  STATE.feedbackElement.innerText = `❌ ${note} — Try again`;
-  adaptiveAdjust(false);
-}
-
-/* progress bar updater */
-function updateProgress(){
-  const songObj = STATE.songs[STATE.currentSong] || STATE.customSongs[STATE.currentSong];
-  if(!songObj) return;
-  const total = songObj.notes.split(' ').length;
-  const frac = Math.min(1, STATE.noteIndex / total);
-  if(STATE.progressElement) STATE.progressElement.style.width = (frac * 100) + '%';
-  // update small stats
-  const acc = STATE.accuracy.total ? Math.round((STATE.accuracy.correct / STATE.accuracy.total)*100) : 0;
-  const accEl = document.querySelector('.main div[style*="Accuracy"]') || null;
-  // update top-streak pill
-  const streakPill = document.querySelector('.pill strong');
-  if(streakPill) streakPill.innerText = STATE.streak;
-  if(STATE.noteIndex >= total) onSongComplete();
-}
-
-/* Called when a song finishes */
-function onSongComplete(){
-  STATE.feedbackElement.innerText = '🎉 Song Completed! Great job!';
-  // award achievements, update counters
-  awardAchievement('song_completed');
-  saveToStorage();
-}
-
-/* ---------- Metronome (visual tick + optional audio placeholder) ---------- */
-function startMetronome(bpm=60){
-  stopMetronome();
-  STATE.metronomeBpm = bpm;
-  const interval = 60000 / bpm;
-  STATE.metronomeTick = setInterval(() => {
-    // simple visual flash on header feedback area
-    const fb = STATE.feedbackElement;
-    if(!fb) return;
-    fb.style.transform = 'scale(0.98)';
-    setTimeout(()=> fb.style.transform = 'scale(1)', 80);
-    // (audio click would be played here)
-  }, interval);
-}
-function stopMetronome(){
-  if(STATE.metronomeTick) { clearInterval(STATE.metronomeTick); STATE.metronomeTick = null; }
-}
-
-/* ---------- Adaptive difficulty hook ---------- */
-function adaptiveAdjust(success){
-  if(!STATE.difficulty.auto) return;
-  // simple rule: if success streak grows, tighten tolerance; if repeated misses, relax
-  if(success){
-    // every 8 successful notes -> increment difficulty slightly
-    if(STATE.streak % 8 === 0) {
-      STATE.difficulty.tolerance = Math.max(0.15, STATE.difficulty.tolerance - 0.05);
-      // show short feedback
-      STATE.feedbackElement.innerText = `Nice! Difficulty increased.`;
-      setTimeout(()=> showNextExpected(), 800);
-    }
-  } else {
-    // on mistake, relax tolerance a bit
-    STATE.difficulty.tolerance = Math.min(0.8, STATE.difficulty.tolerance + 0.06);
-  }
-}
-
-/* ---------- Achievements / Gamification ---------- */
-function awardAchievement(id){
-  STATE.achievements[id] = (STATE.achievements[id] || 0) + 1;
-  // simple visual confetti placeholder
-  triggerConfetti();
-}
-function triggerConfetti(){
-  // lightweight confetti: create a few colorful squares that fall and fade
-  const wrap = document.createElement('div');
-  wrap.style.position = 'fixed'; wrap.style.left='50%'; wrap.style.top='20%'; wrap.style.pointerEvents='none'; wrap.style.zIndex='2000';
-  for(let i=0;i<30;i++){
-    const c = document.createElement('div');
-    c.style.width='8px'; c.style.height='8px';
-    c.style.background = ['#6c8cff','#3ad0a3','#ffdd57','#ff6b6b'][Math.floor(Math.random()*4)];
-    c.style.position='absolute'; c.style.left=(Math.random()*200-100)+'px';
-    c.style.opacity='0.95'; c.style.transform = `translateY(${Math.random()*-10}px) rotate(${Math.random()*360}deg)`;
-    c.style.transition = `transform 900ms cubic-bezier(.2,.9,.2,1), opacity 900ms`;
-    wrap.appendChild(c);
-    setTimeout(()=> c.style.transform = `translateY(${200+Math.random()*120}px) rotate(${Math.random()*720}deg)`, 40);
-    setTimeout(()=> c.style.opacity = '0', 900);
-  }
-  document.body.appendChild(wrap);
-  setTimeout(()=> document.body.removeChild(wrap), 1100);
-}
-
-/* ---------- Avatar render (small) ---------- */
-function renderAvatar(){
-  const char = document.getElementById('character');
-  if(!char) return;
-  char.innerHTML = '';
-  const head = document.createElement('div');
-  head.style.width='64px'; head.style.height='64px'; head.style.borderRadius='50%';
-  head.style.background = STATE.avatar.head; head.style.margin='8px auto 4px';
-  const body = document.createElement('div');
-  body.style.width='80px'; body.style.height='110px'; body.style.background=STATE.avatar.body; body.style.margin='0 auto'; body.style.borderRadius='12px';
-  char.appendChild(head); char.appendChild(body);
-}
-
-/* ---------- Storage (autosave / load) ---------- */
-const STORAGE_KEY = 'piano_tutor_v1';
-function saveToStorage(){
-  const data = {
-    customSongs: STATE.customSongs,
-    calibration: STATE.calibration,
-    progress: { currentSong: STATE.currentSong, noteIndex: STATE.noteIndex, skips: STATE.skips, streak: STATE.streak },
-    achievements: STATE.achievements,
-    avatar: STATE.avatar
-  };
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-}
-
-function loadFromStorage(){
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if(!raw) return;
-    const parsed = JSON.parse(raw);
-    if(parsed.customSongs) STATE.customSongs = parsed.customSongs;
-    if(parsed.calibration) STATE.calibration = parsed.calibration;
-    if(parsed.progress){
-      STATE.currentSong = parsed.progress.currentSong || STATE.currentSong;
-      STATE.noteIndex = parsed.progress.noteIndex || STATE.noteIndex;
-      STATE.skips = parsed.progress.skips || STATE.skips;
-      STATE.streak = parsed.progress.streak || STATE.streak;
-    }
-    if(parsed.achievements) STATE.achievements = parsed.achievements;
-    if(parsed.avatar) STATE.avatar = parsed.avatar;
-  } catch(e){
-    console.warn('Failed to load storage', e);
-  }
-}
-
-function startAutoSave(){
-  if(STATE.autosaveTimer) clearInterval(STATE.autosaveTimer);
-  STATE.autosaveTimer = setInterval(saveToStorage, 120000); // 2 minutes
-}
-
-/* ---------- Keyboard mapping for quick testing ---------- */
-document.addEventListener('keydown', (e) => {
-  // A S D F G H J K L map roughly to C D E F G A B C
-  const map = {
-    'a':'C4','w':'C#4','s':'D4','e':'D#4','d':'E4','f':'F4','t':'F#4','g':'G4','y':'G#4','h':'A4','u':'A#4','j':'B4','k':'C5'
-  };
-  if(map[e.key]) {
-    // visual press the key element quickly
-    const el = findKeyElement(map[e.key]);
-    if(el){
-      el.classList.add('pressed');
-      setTimeout(()=> el.classList.remove('pressed'), 120);
-    }
-    listenForNoteInput(map[e.key]);
-  }
-});
-
-/* ---------- Calibration interactive flow (simulated) ---------- */
-/* The real implementation would record audio for each prompted note,
-   run pitch detection, and map frequency -> note name. We'll simulate with prompts. */
-
-async function startCalibrationFlow(mode='full'){
-  // mode: 'full' or 'octave' (only sample 12 notes)
-  STATE.calibration.mode = mode;
-  STATE.calibration.map = {};
-  const userOctaves = mode === 'full' ? STATE.visibleOctaves : 1;
-  const base = STATE.baseOctave;
-  // build list of semitones to collect
-  const notesToCalibrate = buildKeyList(base, userOctaves).filter(n => !n.includes('#'));
-  // prompt user to play each note (simulated here)
-  for(let i=0;i<notesToCalibrate.length;i++){
-    const note = notesToCalibrate[i];
-    // show instruction UI
-    STATE.feedbackElement.innerText = `Calibration — Play: ${note} (${i+1}/${notesToCalibrate.length})`;
-    // wait for user to click a real key on their piano OR virtual key — here simulated by a confirm
-    await waitForUserPlay(note); // placeholder that resolves once the note is played
-    // store dummy frequency (in real code you'd compute frequency)
-    STATE.calibration.map[note] = { freq: 440 * Math.pow(2, (noteToIndex(note) - noteToIndex('A4'))/12) }; // reference
-  }
-  STATE.feedbackElement.innerText = `Calibration complete — saved ${Object.keys(STATE.calibration.map).length} notes.`;
-  saveToStorage();
-}
-
-/* waitForUserPlay: simulated waiting for user to click a piano key or press a keyboard key
-   In production this function should hook to real-time pitch detection events and resolve
-   when the detected pitch is mapped to one of the expected notes. */
-function waitForUserPlay(expectedNote){
-  return new Promise(resolve => {
-    const handler = function(e){
-      // Accept a pointerdown on the virtual key or keyboard input (we use findKeyElement)
-      if(e.type === 'pointerdown'){
-        const note = e.currentTarget && e.currentTarget.dataset ? e.currentTarget.dataset.note : null;
-        if(note){
-          // store mapping (in real: measured frequency)
-          STATE.calibration.map[expectedNote] = { mappedTo: note, time: Date.now() };
-          cleanup();
-          resolve();
-        }
-      } else if(e.type === 'keydown'){
-        const map = { 'a':'C4','w':'C#4','s':'D4','e':'D#4','d':'E4','f':'F4','t':'F#4','g':'G4','y':'G#4','h':'A4','u':'A#4','j':'B4','k':'C5' };
-        if(map[e.key]){
-          STATE.calibration.map[expectedNote] = { mappedTo: map[e.key], time: Date.now() };
-          cleanup();
-          resolve();
-        }
+        detectPitch();
+      } catch (err) {
+        document.getElementById("micStatus").textContent = "🎤 Microphone: Error";
+        document.getElementById("micStatus").className = "mic-status inactive";
+        console.error(err);
       }
+    }
+
+    function detectPitch() {
+      analyser.getFloatTimeDomainData(dataArray);
+      let pitch = autoCorrelate(dataArray, audioContext.sampleRate);
+      if (pitch !== -1) {
+        console.log("Detected pitch:", pitch.toFixed(2), "Hz");
+        // Later: map this to notes + show feedback
+      }
+      requestAnimationFrame(detectPitch);
+    }
+
+    // Basic autocorrelation pitch detection
+    function autoCorrelate(buf, sampleRate) {
+      let SIZE = buf.length;
+      let rms = 0;
+      for (let i=0;i<SIZE;i++) rms += buf[i]*buf[i];
+      rms = Math.sqrt(rms/SIZE);
+      if (rms < 0.01) return -1; // too quiet
+
+      let r1=0, r2=SIZE-1, thres=0.2;
+      for (let i=0; i<SIZE/2; i++) if (Math.abs(buf[i])<thres) { r1=i; break; }
+      for (let i=1; i<SIZE/2; i++) if (Math.abs(buf[SIZE-i])<thres) { r2=SIZE-i; break; }
+
+      buf = buf.slice(r1,r2);
+      SIZE = buf.length;
+
+      let c = new Array(SIZE).fill(0);
+      for (let i=0;i<SIZE;i++) for (let j=0;j<SIZE-i;j++) c[i] = c[i]+buf[j]*buf[j+i];
+
+      let d=0; while (c[d]>c[d+1]) d++;
+      let maxval=-1, maxpos=-1;
+      for (let i=d;i<SIZE;i++) if (c[i]>maxval) {maxval=c[i];maxpos=i;}
+      if (maxpos===-1) return -1;
+      return sampleRate/maxpos;
+    }
+
+    // Start microphone
+    initMic();
+  </script>
+</body>
+</html>
+  <!-- Calibration Section -->
+  <section id="calibration">
+    <h2>Calibration</h2>
+    <p>We’ll go through each note so the app can learn your piano.</p>
+    <button onclick="startCalibration()">Start Calibration</button>
+    <div id="calibrationStep"></div>
+    <div class="piano" id="calibrationPiano">
+      <!-- Virtual piano (just like home) -->
+      <div class="key white" id="C4">C</div>
+      <div class="key black" id="C#4"></div>
+      <div class="key white" id="D4">D</div>
+      <div class="key black" id="D#4"></div>
+      <div class="key white" id="E4">E</div>
+      <div class="key white" id="F4">F</div>
+      <div class="key black" id="F#4"></div>
+      <div class="key white" id="G4">G</div>
+      <div class="key black" id="G#4"></div>
+      <div class="key white" id="A4">A</div>
+      <div class="key black" id="A#4"></div>
+      <div class="key white" id="B4">B</div>
+      <div class="key white" id="C5">C</div>
+    </div>
+  </section>
+
+  <script>
+    const calibrationNotes = ["C4","C#4","D4","D#4","E4","F4","F#4","G4","G#4","A4","A#4","B4","C5"];
+    let calibrationIndex = 0;
+    let calibrationMap = {};
+
+    function startCalibration() {
+      calibrationIndex = 0;
+      calibrationMap = {};
+      nextCalibrationStep();
+    }
+
+    function nextCalibrationStep() {
+      if (calibrationIndex >= calibrationNotes.length) {
+        document.getElementById("calibrationStep").innerHTML = "✅ Calibration complete!";
+        localStorage.setItem("pianoCalibration", JSON.stringify(calibrationMap));
+        return;
+      }
+
+      const currentNote = calibrationNotes[calibrationIndex];
+      document.getElementById("calibrationStep").innerHTML = 
+        `Play <strong>${currentNote}</strong> on your piano 🎹`;
+      
+      // highlight the key on virtual piano
+      document.querySelectorAll(".key").forEach(k => k.style.background="");
+      document.getElementById(currentNote).style.background = "#5dade2";
+
+      waitForNote(currentNote);
+    }
+
+    function waitForNote(expectedNote) {
+      // Listen until the right note is played
+      function check() {
+        analyser.getFloatTimeDomainData(dataArray);
+        let pitch = autoCorrelate(dataArray, audioContext.sampleRate);
+        if (pitch !== -1) {
+          let detected = freqToNote(pitch);
+          if (detected === expectedNote) {
+            calibrationMap[expectedNote] = pitch;
+            document.getElementById(expectedNote).style.background = "#2ecc71"; // green
+            calibrationIndex++;
+            setTimeout(nextCalibrationStep, 1000);
+            return;
+          } else {
+            document.getElementById(expectedNote).style.background = "#e74c3c"; // red
+          }
+        }
+        requestAnimationFrame(check);
+      }
+      check();
+    }
+
+    function freqToNote(freq) {
+      // Rough mapping, later improved with calibrationMap
+      const notes = [
+        { note: "C4", freq: 261.63 },
+        { note: "C#4", freq: 277.18 },
+        { note: "D4", freq: 293.66 },
+        { note: "D#4", freq: 311.13 },
+        { note: "E4", freq: 329.63 },
+        { note: "F4", freq: 349.23 },
+        { note: "F#4", freq: 369.99 },
+        { note: "G4", freq: 392.00 },
+        { note: "G#4", freq: 415.30 },
+        { note: "A4", freq: 440.00 },
+        { note: "A#4", freq: 466.16 },
+        { note: "B4", freq: 493.88 },
+        { note: "C5", freq: 523.25 }
+      ];
+      let closest = notes.reduce((a,b)=>Math.abs(b.freq-freq)<Math.abs(a.freq-freq)?b:a);
+      return closest.note;
+    }
+  </script>
+  <!-- Lessons Section -->
+  <section id="lessons">
+    <h2>Lessons 🎶</h2>
+    <p>Select a song and follow the notes on your piano.</p>
+    
+    <label for="songSelect">Choose a song:</label>
+    <select id="songSelect"></select>
+    
+    <button onclick="startLesson()">Start Lesson</button>
+    
+    <div id="lessonDisplay"></div>
+    <div id="lessonFeedback"></div>
+    <div id="lessonScore"></div>
+  </section>
+
+  <script>
+    // 🎵 SONG LIBRARY (20+ songs)
+    const songLibrary = {
+      "Mary Had a Little Lamb (Easy)": ["E4","D4","C4","D4","E4","E4","E4","D4","D4","D4","E4","G4","G4"],
+      "Twinkle Twinkle Little Star (Easy)": ["C4","C4","G4","G4","A4","A4","G4","F4","F4","E4","E4","D4","D4","C4"],
+      "Happy Birthday (Easy)": ["C4","C4","D4","C4","F4","E4","C4","C4","D4","C4","G4","F4"],
+      "Ode to Joy (Medium)": ["E4","E4","F4","G4","G4","F4","E4","D4","C4","C4","D4","E4","E4","D4","D4"],
+      "Jingle Bells (Medium)": ["E4","E4","E4","E4","E4","E4","E4","G4","C4","D4","E4"],
+      "London Bridge (Medium)": ["G4","A4","G4","F4","E4","F4","G4","D4","E4","F4","E4","F4","G4"],
+      "Yankee Doodle (Medium)": ["C4","C4","D4","E4","C4","E4","F4","G4","C4","D4","E4","C4","A4"],
+      "Hot Cross Buns (Easy)": ["E4","D4","C4","E4","D4","C4","C4","C4","C4","D4","D4","D4","D4","E4","E4","E4","E4"],
+      "Für Elise (Advanced)": ["E5","D#5","E5","D#5","E5","B4","D5","C5","A4"],
+      "Canon in D (Advanced)": ["D4","A4","B4","F#4","G4","D4","G4","A4"],
+      "Minuet in G (Advanced)": ["G4","F#4","G4","A4","B4","C5","D5","E5"],
+      "C Major Scale (Easy Practice)": ["C4","D4","E4","F4","G4","A4","B4","C5"],
+      "D Major Scale (Medium Practice)": ["D4","E4","F#4","G4","A4","B4","C#5","D5"],
+      "G Major Scale (Medium Practice)": ["G4","A4","B4","C5","D5","E5","F#5","G5"],
+      "C Chords (Practice)": ["C4","E4","G4","C5","E5","G5"],
+      "G Chords (Practice)": ["G3","B3","D4","G4","B4","D5"],
+      "Amazing Grace (Medium)": ["G4","B4","D5","B4","G4","E5","D5","C5","B4","G4"],
+      "Silent Night (Medium)": ["G4","A4","G4","E4","G4","A4","G4","E4","C5","B4","A4"],
+      "Star Wars Theme (Advanced)": ["G4","G4","G4","Eb4","Bb4","G4","Eb4","Bb4","G4"],
+      "Beethoven Symphony No. 5 (Advanced)": ["G4","G4","G4","Eb4","F4","F4","F4","D4"]
     };
-    // attach listeners to virtual keys
-    const virtualKeys = Array.from(document.querySelectorAll('.white-key, .black-key'));
-    virtualKeys.forEach(k => k.addEventListener('pointerdown', handler));
-    document.addEventListener('keydown', handler);
-    // cleanup helper
-    function cleanup(){
-      virtualKeys.forEach(k => k.removeEventListener('pointerdown', handler));
-      document.removeEventListener('keydown', handler);
+
+    // Populate dropdown
+    const select = document.getElementById("songSelect");
+    for (let song in songLibrary) {
+      let opt = document.createElement("option");
+      opt.value = song;
+      opt.innerHTML = song;
+      select.appendChild(opt);
     }
-    // fallback: if user does nothing for long time, allow manual skip
-    // (we don't implement timeout here to avoid losing users)
-  });
-}
 
-/* ---------- Initialization on page load ---------- */
-window.addEventListener('load', () => {
-  initUI();
-  renderAvatar();
-});
+    let lessonSong = [];
+    let lessonIndex = 0;
+    let score = 0;
 
-/* ---------- Small helper functions ---------- */
-function updateHeaderStats(){
-  const streakPill = document.querySelector('.pill strong');
-  if(streakPill) streakPill.innerText = STATE.streak;
-}
+    function startLesson() {
+      const chosen = document.getElementById("songSelect").value;
+      lessonSong = songLibrary[chosen];
+      lessonIndex = 0;
+      score = 0;
+      document.getElementById("lessonScore").innerHTML = "";
+      showNextNote();
+      waitForLessonNote();
+    }
 
-/* Expose some functions to the global scope so inline HTML can call them */
-window.goToPage = goToPage;
-window.startQuick = startQuick;
-window.startCalibrationFlow = startCalibrationFlow;
-window.listenForNoteInput = listenForNoteInput;
-window.skipNote = function(){ if(STATE.skips>0){ STATE.skips--; STATE.noteIndex++; updateProgress(); showNextExpected(); } else alert('No skips left'); };
-window.restartSong = function(){ STATE.noteIndex = 0; STATE.skips = 5; STATE.accuracy = {correct:0,total:0}; updateProgress(); showNextExpected(); };
-window.customizeAvatar = function(part, color){ STATE.avatar[part]=color; renderAvatar(); saveToStorage(); };
-window.saveToStorage = saveToStorage;
-window.loadFromStorage = loadFromStorage;
-window.renderPiano = renderPiano;
-window.renderSongList = renderSongList;
-
-</script>
-<script>
-/* ===========================
-   Block 3 — Extended Features
-   =========================== */
-
-/* ---------- Recording & Playback ---------- */
-STATE.recording = { active:false, notes:[] };
-
-function startRecording(){
-  STATE.recording = { active:true, notes:[], start:Date.now() };
-  STATE.feedbackElement.innerText = '🔴 Recording started...';
-}
-function stopRecording(){
-  STATE.recording.active = false;
-  STATE.feedbackElement.innerText = '⏹ Recording stopped.';
-  saveToStorage();
-}
-function playRecording(){
-  if(!STATE.recording.notes.length) { alert('No recording available.'); return; }
-  let startTime = STATE.recording.notes[0].time;
-  STATE.recording.notes.forEach(n => {
-    const delay = n.time - startTime;
-    setTimeout(()=>{
-      const el = findKeyElement(n.note);
-      if(el){
-        el.classList.add('pressed');
-        setTimeout(()=> el.classList.remove('pressed'), 200);
+    function showNextNote() {
+      if (lessonIndex >= lessonSong.length) {
+        let feedback = "🎉 Lesson complete! Final score: " + score;
+        if (score > lessonSong.length * 9) feedback += " (Master!)";
+        else if (score > lessonSong.length * 6) feedback += " (Great job!)";
+        else feedback += " (Keep practicing!)";
+        document.getElementById("lessonDisplay").innerHTML = feedback;
+        return;
       }
-    }, delay);
-  });
-  STATE.feedbackElement.innerText = '▶️ Playing back recording...';
-}
+      const nextNote = lessonSong[lessonIndex];
+      document.getElementById("lessonDisplay").innerHTML = 
+        `Next Note: <strong>${nextNote}</strong>`;
+    }
 
-/* Hook into listenForNoteInput to capture notes */
-const oldListen = listenForNoteInput;
-listenForNoteInput = function(note){
-  if(STATE.recording.active){
-    STATE.recording.notes.push({ note, time: Date.now() - STATE.recording.start });
-  }
-  oldListen(note);
-};
+    function waitForLessonNote() {
+      function check() {
+        analyser.getFloatTimeDomainData(dataArray);
+        let pitch = autoCorrelate(dataArray, audioContext.sampleRate);
+        if (pitch !== -1) {
+          let detected = freqToNote(pitch);
 
-/* ---------- Song Import / Export ---------- */
-function exportSongs(){
-  const data = { songs: STATE.customSongs };
-  const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'songs.json';
-  a.click();
-}
-function importSongs(file){
-  const reader = new FileReader();
-  reader.onload = function(e){
-    try{
-      const parsed = JSON.parse(e.target.result);
-      if(parsed.songs){
-        STATE.customSongs = {...STATE.customSongs, ...parsed.songs};
-        renderSongList();
-        saveToStorage();
-        alert('Songs imported successfully.');
-      }
-    }catch(err){ alert('Failed to import songs: ' + err); }
-  };
-  reader.readAsText(file);
-}
-
-/* ---------- Mini-games ---------- */
-function startEarTraining(){
-  // choose a random note
-  const allNotes = buildKeyList(STATE.baseOctave, STATE.visibleOctaves);
-  const target = allNotes[Math.floor(Math.random()*allNotes.length)];
-  STATE.feedbackElement.innerText = `🎵 Ear Training: Play ${target}`;
-  STATE.currentSong = '__earTraining';
-  STATE.noteIndex = 0;
-  STATE.songs['__earTraining'] = { notes: target, length:1 };
-  highlightExpectedKey(target);
-}
-
-function startSpeedChallenge(){
-  const notes = [];
-  const allNotes = buildKeyList(STATE.baseOctave, STATE.visibleOctaves);
-  for(let i=0;i<20;i++) notes.push(allNotes[Math.floor(Math.random()*allNotes.length)]);
-  STATE.songs['__speed'] = { notes: notes.join(' '), length: notes.length };
-  STATE.currentSong = '__speed';
-  STATE.noteIndex = 0;
-  STATE.feedbackElement.innerText = `⚡ Speed Challenge: Play 20 random notes!`;
-  updatePreview();
-  showNextExpected();
-}
-
-/* ---------- Achievements & Stats ---------- */
-function renderAchievements(){
-  const list = document.getElementById('achievementsList');
-  if(!list) return;
-  list.innerHTML = '';
-  Object.keys(STATE.achievements).forEach(id=>{
-    const count = STATE.achievements[id];
-    const row = document.createElement('div');
-    row.className = 'song-card';
-    row.innerHTML = `<div><strong>${id}</strong></div><div class="meta">Unlocked ${count} time(s)</div>`;
-    list.appendChild(row);
-  });
-}
-function renderMonthlyStats(){
-  const stats = document.getElementById('monthlyStats');
-  if(!stats) return;
-  stats.innerHTML = `
-    <div class="song-card"><div><strong>Accuracy</strong></div><div>${STATE.accuracy.correct}/${STATE.accuracy.total} (${STATE.accuracy.total?Math.round(STATE.accuracy.correct/STATE.accuracy.total*100):0}%)</div></div>
-    <div class="song-card"><div><strong>Longest Streak</strong></div><div>${STATE.streak}</div></div>
-    <div class="song-card"><div><strong>Songs Completed</strong></div><div>${STATE.achievements.song_completed||0}</div></div>
-  `;
-}
-
-/* ---------- MIDI Input Hook (future-ready) ---------- */
-if(navigator.requestMIDIAccess){
-  navigator.requestMIDIAccess().then(midiAccess=>{
-    midiAccess.inputs.forEach(input=>{
-      input.onmidimessage = (msg)=>{
-        const [cmd,note,vel] = msg.data;
-        if(cmd===144 && vel>0){ // note on
-          const n = midiNoteToName(note);
-          listenForNoteInput(n);
-          const el = findKeyElement(n);
-          if(el){ el.classList.add('pressed'); setTimeout(()=> el.classList.remove('pressed'), 120); }
+          if (lessonIndex < lessonSong.length) {
+            let expected = lessonSong[lessonIndex];
+            if (detected === expected) {
+              score += 10;
+              document.getElementById("lessonFeedback").innerHTML = 
+                `<span style="color:lime">✅ Correct: ${detected}</span>`;
+              lessonIndex++;
+              showNextNote();
+              setTimeout(waitForLessonNote, 1000);
+              return;
+            } else {
+              score -= 2;
+              document.getElementById("lessonFeedback").innerHTML = 
+                `<span style="color:red">❌ Wrong: ${detected}. Expected: ${expected}</span>`;
+            }
+            document.getElementById("lessonScore").innerHTML = "Score: " + score;
+          }
         }
-      };
+        requestAnimationFrame(check);
+      }
+      check();
+    }
+  </script>
+  <!-- Songs / Custom Song Section -->
+  <section id="songs">
+    <h2>Custom Songs & Sharing</h2>
+    
+    <div>
+      <button onclick="showCreator('click')">🎹 Click Piano</button>
+      <button onclick="showCreator('manual')">✏️ Manual Input</button>
+      <button onclick="showCreator('code')">🔗 Enter Share Code</button>
+    </div>
+    
+    <div id="creatorArea"></div>
+  </section>
+
+  <script>
+    let currentSongNotes = [];
+    let creatorMode = '';
+
+    function showCreator(mode) {
+      creatorMode = mode;
+      const area = document.getElementById("creatorArea");
+      area.innerHTML = '';
+      currentSongNotes = [];
+
+      if (mode === 'click') {
+        // Scrollable piano UI
+        let piano = document.createElement('div');
+        piano.style.display = 'flex';
+        piano.style.overflowX = 'scroll';
+        piano.style.border = '1px solid #555';
+        piano.style.padding = '10px';
+        piano.style.background = '#101830';
+        piano.style.width = '100%';
+        area.appendChild(piano);
+
+        const octaves = [3,4,5,6]; // scrollable octaves
+        const noteOrder = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+        octaves.forEach(oct => {
+          noteOrder.forEach(n=>{
+            let key = document.createElement('div');
+            key.textContent = n;
+            key.dataset.note = n+oct;
+            key.style.margin = '2px';
+            key.style.padding = '20px';
+            key.style.minWidth = '30px';
+            key.style.textAlign = 'center';
+            key.style.border = '1px solid #444';
+            key.style.background = n.includes('#') ? '#333' : '#eee';
+            key.style.color = n.includes('#') ? '#eee' : '#000';
+            key.style.cursor = 'pointer';
+            key.onclick = () => {
+              currentSongNotes.push(key.dataset.note);
+              key.style.background = '#5dade2';
+              updateCurrentSongDisplay();
+            }
+            piano.appendChild(key);
+          });
+        });
+
+        let display = document.createElement('div');
+        display.id = 'currentSongDisplay';
+        display.style.marginTop = '10px';
+        area.appendChild(display);
+
+        let saveBtn = document.createElement('button');
+        saveBtn.textContent = '💾 Save Song';
+        saveBtn.onclick = saveCurrentSong;
+        area.appendChild(saveBtn);
+
+        let shareBtn = document.createElement('button');
+        shareBtn.textContent = '🔗 Get Share Code';
+        shareBtn.style.marginLeft = '10px';
+        shareBtn.onclick = shareCurrentSong;
+        area.appendChild(shareBtn);
+
+      } else if (mode === 'manual') {
+        let input = document.createElement('textarea');
+        input.placeholder = 'Type notes separated by spaces, e.g. C4 D4 E4 F4';
+        input.style.width = '100%';
+        input.style.height = '100px';
+        area.appendChild(input);
+
+        let saveBtn = document.createElement('button');
+        saveBtn.textContent = '💾 Save Manual Song';
+        saveBtn.onclick = () => {
+          const notes = input.value.trim().split(/\s+/);
+          currentSongNotes = notes;
+          saveCurrentSong();
+        }
+        area.appendChild(saveBtn);
+
+      } else if (mode === 'code') {
+        let input = document.createElement('input');
+        input.placeholder = 'Paste song code here';
+        input.style.width = '80%';
+        area.appendChild(input);
+
+        let loadBtn = document.createElement('button');
+        loadBtn.textContent = '📥 Load Song';
+        loadBtn.onclick = () => {
+          try {
+            const notes = JSON.parse(atob(input.value));
+            currentSongNotes = notes;
+            alert('Song loaded! You can now play it.');
+          } catch(err) {
+            alert('Invalid code!');
+          }
+        }
+        area.appendChild(loadBtn);
+      }
+    }
+
+    function updateCurrentSongDisplay() {
+      document.getElementById('currentSongDisplay').innerText = 'Current Song: ' + currentSongNotes.join(' ');
+    }
+
+    function saveCurrentSong() {
+      let title = prompt('Enter song title:');
+      if (!title) return;
+      let savedSongs = JSON.parse(localStorage.getItem('customSongs')||'{}');
+      savedSongs[title] = currentSongNotes;
+      localStorage.setItem('customSongs', JSON.stringify(savedSongs));
+      alert('Song saved! It will appear in Lessons dropdown.');
+      // Add to Lessons dropdown dynamically
+      const select = document.getElementById("songSelect");
+      let opt = document.createElement("option");
+      opt.value = title;
+      opt.innerHTML = title;
+      select.appendChild(opt);
+    }
+
+    function shareCurrentSong() {
+      if (currentSongNotes.length === 0) { alert('No notes to share'); return; }
+      const code = btoa(JSON.stringify(currentSongNotes));
+      prompt('Share this code with others:', code);
+    }
+  </script>
+  <!-- Settings Section -->
+  <section id="settings">
+    <h2>Settings ⚙️</h2>
+    
+    <div>
+      <h3>Toggles</h3>
+      <label><input type="checkbox" id="metronomeToggle"> Metronome</label><br>
+      <label><input type="checkbox" id="adaptiveToggle"> Adaptive Difficulty</label><br>
+      <label><input type="checkbox" id="visualOnlyToggle"> Visual Feedback Only</label><br>
+      <label><input type="checkbox" id="autosaveToggle"> Auto-save every 2 minutes</label><br>
+    </div>
+
+    <div style="margin-top:20px;">
+      <h3>Theme</h3>
+      <label>Base Color: <input type="color" id="themeColor" value="#0a0f1a"></label><br>
+      <label>Accent Color: <input type="color" id="accentColor" value="#5dade2"></label>
+    </div>
+
+    <div style="margin-top:20px;">
+      <h3>Calibration & Songs</h3>
+      <button onclick="resetCalibration()">Reset Calibration</button>
+      <button onclick="resetCustomSongs()">Reset Custom Songs</button>
+    </div>
+  </section>
+
+  <script>
+    // Apply theme
+    document.getElementById("themeColor").oninput = e => document.body.style.background = e.target.value;
+    document.getElementById("accentColor").oninput = e => {
+      document.querySelectorAll("h1, h2, h3, strong").forEach(el => el.style.color = e.target.value);
+    }
+
+    // Auto-save every 2 minutes
+    let autoSaveInterval;
+    document.getElementById("autosaveToggle").onchange = e => {
+      if(e.target.checked){
+        autoSaveInterval = setInterval(() => {
+          saveCustomSongs();
+          console.log('Auto-saved custom songs');
+        }, 120000); // 2 minutes
+      } else {
+        clearInterval(autoSaveInterval);
+      }
+    }
+
+    function resetCalibration() {
+      if(confirm("Are you sure you want to reset calibration?")){
+        localStorage.removeItem("pianoCalibration");
+        alert("Calibration reset. Please recalibrate your piano.");
+      }
+    }
+
+    function resetCustomSongs() {
+      if(confirm("Are you sure you want to delete all custom songs?")){
+        localStorage.removeItem("customSongs");
+        alert("All custom songs deleted.");
+        // Also remove them from Lessons dropdown
+        const select = document.getElementById("songSelect");
+        Array.from(select.options).forEach(opt=>{
+          if(JSON.parse(localStorage.getItem('customSongs')||'{}')[opt.value]===undefined) return;
+          select.removeChild(opt);
+        });
+      }
+    }
+
+    function saveCustomSongs() {
+      // Saves existing songs from localStorage (placeholder)
+      console.log("Custom songs saved to localStorage");
+    }
+  </script>
+  <!-- Avatar Customizer Section -->
+  <section id="avatar">
+    <h2>Character Customizer 🎨</h2>
+    <div style="display:flex; gap:20px;">
+      <!-- Avatar Canvas -->
+      <canvas id="avatarCanvas" width="200" height="300" style="background:#101830; border:1px solid #555;"></canvas>
+      
+      <!-- Controls -->
+      <div>
+        <label>Hair Style:
+          <select id="hairStyleSelect">
+            <option value="short">Short</option>
+            <option value="long">Long</option>
+            <option value="spiky">Spiky</option>
+          </select>
+        </label><br>
+        
+        <label>Hair Color: <input type="color" id="hairColor" value="#ffcc00"></label><br>
+        <label>Skin Tone: <input type="color" id="skinColor" value="#f5d6b4"></label><br>
+        <label>Outfit Color: <input type="color" id="outfitColor" value="#5dade2"></label><br>
+        
+        <label>Accessory:
+          <select id="accessorySelect">
+            <option value="none">None</option>
+            <option value="hat">Hat</option>
+            <option value="glasses">Glasses</option>
+            <option value="guitar">Guitar</option>
+          </select>
+        </label>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    const canvas = document.getElementById('avatarCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const avatarState = {
+      hairStyle: 'short',
+      hairColor: '#ffcc00',
+      skinColor: '#f5d6b4',
+      outfitColor: '#5dade2',
+      accessory: 'none'
+    };
+
+    function drawAvatar() {
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+
+      // Body
+      ctx.fillStyle = avatarState.outfitColor;
+      ctx.fillRect(70, 150, 60, 120);
+
+      // Head
+      ctx.fillStyle = avatarState.skinColor;
+      ctx.beginPath();
+      ctx.arc(100, 100, 40, 0, Math.PI*2);
+      ctx.fill();
+
+      // Hair
+      ctx.fillStyle = avatarState.hairColor;
+      if(avatarState.hairStyle === 'short'){
+        ctx.fillRect(60,60,80,30);
+      } else if(avatarState.hairStyle === 'long'){
+        ctx.fillRect(60,50,80,50);
+      } else if(avatarState.hairStyle === 'spiky'){
+        for(let i=0;i<5;i++){
+          ctx.beginPath();
+          ctx.moveTo(60+i*16,60);
+          ctx.lineTo(80+i*16,30);
+          ctx.lineTo(100+i*16,60);
+          ctx.fill();
+        }
+      }
+
+      // Accessory
+      ctx.fillStyle = '#000';
+      if(avatarState.accessory === 'hat'){
+        ctx.fillRect(55,30,90,20);
+      } else if(avatarState.accessory === 'glasses'){
+        ctx.fillRect(70,90,20,10);
+        ctx.fillRect(110,90,20,10);
+        ctx.fillRect(90,95,20,2); // bridge
+      } else if(avatarState.accessory === 'guitar'){
+        ctx.fillStyle = '#8B4513';
+        ctx.fillRect(120,180,60,10); // simple guitar
+        ctx.beginPath();
+        ctx.arc(180,185,15,0,Math.PI*2);
+        ctx.fill();
+      }
+    }
+
+    // Update state on change
+    document.getElementById('hairStyleSelect').onchange = e => { avatarState.hairStyle = e.target.value; drawAvatar(); }
+    document.getElementById('hairColor').oninput = e => { avatarState.hairColor = e.target.value; drawAvatar(); }
+    document.getElementById('skinColor').oninput = e => { avatarState.skinColor = e.target.value; drawAvatar(); }
+    document.getElementById('outfitColor').oninput = e => { avatarState.outfitColor = e.target.value; drawAvatar(); }
+    document.getElementById('accessorySelect').onchange = e => { avatarState.accessory = e.target.value; drawAvatar(); }
+
+    // Load saved avatar if exists
+    const savedAvatar = JSON.parse(localStorage.getItem('avatarState')||'{}');
+    if(Object.keys(savedAvatar).length > 0){
+      Object.assign(avatarState, savedAvatar);
+    }
+    drawAvatar();
+
+    // Save every change
+    ['hairStyleSelect','hairColor','skinColor','outfitColor','accessorySelect'].forEach(id=>{
+      document.getElementById(id).addEventListener('change',()=> localStorage.setItem('avatarState', JSON.stringify(avatarState)));
+      document.getElementById(id).addEventListener('input',()=> localStorage.setItem('avatarState', JSON.stringify(avatarState)));
     });
-  });
-}
-function midiNoteToName(n){
-  const octave = Math.floor(n/12)-1;
-  const pitch = SEMITONES[n%12];
-  return pitch+octave;
-}
+  </script>
+  <!-- Gamification Display -->
+  <section id="gamification">
+    <h2>Progress & XP</h2>
+    <div style="margin-bottom:10px;">
+      <strong>Level: </strong><span id="playerLevel">1</span><br>
+      <strong>XP: </strong><span id="playerXP">0</span>/<span id="xpToNext">100</span>
+      <div style="background:#444; width:100%; height:20px; border-radius:10px; margin-top:5px;">
+        <div id="xpBar" style="background:#5dade2; height:100%; width:0%; border-radius:10px;"></div>
+      </div>
+    </div>
+    <div id="achievements"></div>
+  </section>
 
-/* ---------- Hook up extra buttons ---------- */
-window.startRecording = startRecording;
-window.stopRecording = stopRecording;
-window.playRecording = playRecording;
-window.exportSongs = exportSongs;
-window.importSongs = importSongs;
-window.startEarTraining = startEarTraining;
-window.startSpeedChallenge = startSpeedChallenge;
-window.renderAchievements = renderAchievements;
-window.renderMonthlyStats = renderMonthlyStats;
+  <script>
+    let player = JSON.parse(localStorage.getItem('playerData') || '{"level":1,"xp":0,"achievements":[],"skips":0}');
+    const xpPerNote = 10;
+    const levelThreshold = level => 100 + (level-1)*50; // XP required for next level
 
-/* Refresh stats & achievements whenever user returns to home/settings */
-document.addEventListener('visibilitychange', ()=>{
-  if(!document.hidden){
-    renderAchievements();
-    renderMonthlyStats();
-  }
-});
-</script>
+    function updateGamificationDisplay(){
+      document.getElementById('playerLevel').innerText = player.level;
+      document.getElementById('playerXP').innerText = player.xp;
+      const xpNext = levelThreshold(player.level);
+      document.getElementById('xpToNext').innerText = xpNext;
+      const percent = Math.min(100, (player.xp/xpNext)*100);
+      document.getElementById('xpBar').style.width = percent+'%';
+      document.getElementById('achievements').innerHTML = 'Achievements: ' + player.achievements.join(', ');
+    }
+
+    function gainXP(points){
+      player.xp += points;
+      const xpNext = levelThreshold(player.level);
+      if(player.xp >= xpNext){
+        player.level++;
+        player.xp -= xpNext;
+        player.skips += 5; // reward 5 skips per level
+        alert('Level Up! You earned 5 skips 🎉');
+      }
+      localStorage.setItem('playerData', JSON.stringify(player));
+      updateGamificationDisplay();
+    }
+
+    function addAchievement(name){
+      if(!player.achievements.includes(name)){
+        player.achievements.push(name);
+        alert('Achievement unlocked: '+name);
+        localStorage.setItem('playerData', JSON.stringify(player));
+        updateGamificationDisplay();
+      }
+    }
+
+    // Hook this into lessons
+    function lessonNoteCorrect(){
+      gainXP(xpPerNote);
+    }
+
+    function lessonComplete(){
+      addAchievement('Completed a Lesson');
+    }
+
+    updateGamificationDisplay();
+  </script>
+  <!-- Metronome / Audio Feedback Controls -->
+  <section id="audioFeedback">
+    <h2>Metronome & Audio Feedback 🎶</h2>
+    
+    <label>Tempo (BPM): <input type="number" id="metronomeBPM" value="80" min="40" max="240"></label><br>
+    <button onclick="toggleMetronome()">Start / Stop Metronome</button><br>
+    <label><input type="checkbox" id="soundFeedbackToggle" checked> Enable Sound Feedback</label>
+  </section>
+
+  <script>
+    let metronomeInterval;
+    let metronomeOn = false;
+    const metronomeSound = new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA='); // tiny click placeholder
+
+    function toggleMetronome(){
+      metronomeOn = !metronomeOn;
+      if(metronomeOn){
+        const bpm = document.getElementById('metronomeBPM').value;
+        const interval = 60000 / bpm; // ms per beat
+        metronomeInterval = setInterval(()=>{ 
+          if(document.getElementById('metronomeToggle').checked){
+            metronomeSound.currentTime = 0;
+            metronomeSound.play();
+          }
+        }, interval);
+      } else {
+        clearInterval(metronomeInterval);
+      }
+    }
+
+    // Sound feedback for lessons
+    const correctSound = new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA='); // replace with real note sound
+    const wrongSound = new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA=');
+
+    function playSoundFeedback(correct){
+      if(!document.getElementById('soundFeedbackToggle').checked) return;
+      if(correct) correctSound.play();
+      else wrongSound.play();
+    }
+
+    // Example integration with Lessons (Block 3)
+    function waitForLessonNote() {
+      function check() {
+        analyser.getFloatTimeDomainData(dataArray);
+        let pitch = autoCorrelate(dataArray, audioContext.sampleRate);
+        if (pitch !== -1) {
+          let detected = freqToNote(pitch);
+
+          if (lessonIndex < lessonSong.length) {
+            let expected = lessonSong[lessonIndex];
+            if (detected === expected) {
+              score += 10;
+              playSoundFeedback(true); // correct note sound
+              document.getElementById("lessonFeedback").innerHTML = `<span style="color:lime">✅ Correct: ${detected}</span>`;
+              lessonIndex++;
+              showNextNote();
+              setTimeout(waitForLessonNote, 1000);
+              return;
+            } else {
+              score -= 2;
+              playSoundFeedback(false); // wrong note sound
+              document.getElementById("lessonFeedback").innerHTML = `<span style="color:red">❌ Wrong: ${detected}. Expected: ${expected}</span>`;
+            }
+            document.getElementById("lessonScore").innerHTML = "Score: " + score;
+          }
+        }
+        requestAnimationFrame(check);
+      }
+      check();
+    }
+  </script>
+  <!-- Achievements & Monthly Progress -->
+  <section id="progress">
+    <h2>Achievements & Monthly Progress 🏆</h2>
+    
+    <div id="achievementList" style="margin-bottom:20px;">
+      <h3>Achievements</h3>
+      <ul></ul>
+    </div>
+    
+    <div id="monthlyProgress">
+      <h3>Monthly Progress</h3>
+      <div id="calendar" style="display:flex; gap:5px; flex-wrap:wrap; max-width:400px;"></div>
+      <div>Total XP this month: <span id="monthlyXP">0</span></div>
+      <div>Current Streak: <span id="streakDays">0</span> days</div>
+    </div>
+  </section>
+
+  <script>
+    const achievementData = [
+      {name:'Completed 5 Lessons', condition:()=> player.achievements.includes('Completed 5 Lessons')},
+      {name:'Score 1000 XP', condition:()=> player.xp >= 1000},
+      {name:'Master a song', condition:()=> player.achievements.includes('Mastered Song')},
+      {name:'7-day streak', condition:()=> getCurrentStreak()>=7},
+      {name:'30-day streak', condition:()=> getCurrentStreak()>=30}
+    ];
+
+    function updateAchievements(){
+      const list = document.querySelector('#achievementList ul');
+      list.innerHTML = '';
+      achievementData.forEach(a=>{
+        const li = document.createElement('li');
+        li.textContent = a.name + (a.condition() ? ' ✅' : ' ❌');
+        list.appendChild(li);
+      });
+    }
+
+    // Monthly Progress Tracker
+    let practiceData = JSON.parse(localStorage.getItem('practiceData') || '[]'); 
+    // array of dates string: 'YYYY-MM-DD'
+
+    function logPractice() {
+      const today = new Date().toISOString().slice(0,10);
+      if(!practiceData.includes(today)){
+        practiceData.push(today);
+        localStorage.setItem('practiceData', JSON.stringify(practiceData));
+      }
+      updateMonthlyProgress();
+    }
+
+    function getCurrentStreak(){
+      const today = new Date();
+      let streak = 0;
+      for(let i=practiceData.length-1;i>=0;i--){
+        const d = new Date(practiceData[i]);
+        const diff = (today - d)/(1000*60*60*24);
+        if(diff <= streak) streak++;
+        else break;
+      }
+      return streak;
+    }
+
+    function updateMonthlyProgress(){
+      const calendar = document.getElementById('calendar');
+      calendar.innerHTML = '';
+      const now = new Date();
+      const monthStart = new Date(now.getFullYear(), now.getMonth(),1);
+      const monthEnd = new Date(now.getFullYear(), now.getMonth()+1,0);
+
+      let totalXP = 0;
+      for(let d=monthStart.getDate(); d<=monthEnd.getDate(); d++){
+        const dateStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        const div = document.createElement('div');
+        div.textContent = d;
+        div.style.width = '30px';
+        div.style.height = '30px';
+        div.style.textAlign = 'center';
+        div.style.border = '1px solid #555';
+        div.style.background = practiceData.includes(dateStr) ? '#5dade2' : '#333';
+        calendar.appendChild(div);
+
+        // Approx XP placeholder: 10 XP per day practiced
+        if(practiceData.includes(dateStr)) totalXP += 10;
+      }
+      document.getElementById('monthlyXP').innerText = totalXP;
+      document.getElementById('streakDays').innerText = getCurrentStreak();
+      updateAchievements();
+    }
+
+    // Call this after completing a lesson
+    function lessonLogged(){
+      logPractice();
+      updateMonthlyProgress();
+    }
+
+    updateMonthlyProgress();
+  </script>
+  <!-- Top Navigation -->
+  <nav style="background:#101830; padding:10px; display:flex; gap:10px;">
+    <button onclick="showSection('home')">🏠 Home</button>
+    <button onclick="showSection('lessons')">🎵 Lessons</button>
+    <button onclick="showSection('songs')">🎹 Custom Songs</button>
+    <button onclick="showSection('settings')">⚙️ Settings</button>
+    <button onclick="showSection('avatar')">🧑 Avatar</button>
+    <button onclick="showSection('progress')">🏆 Progress</button>
+  </nav>
+
+  <style>
+    body {background:#0a0f1a; color:#eee; font-family:Arial, sans-serif; margin:0; padding:0;}
+    section {padding:20px; display:none;}
+    section.active {display:block;}
+    button {background:#5dade2; color:#101830; border:none; padding:8px 12px; border-radius:8px; cursor:pointer;}
+    button:hover {background:#3498db;}
+    input, select, textarea {border-radius:5px; border:1px solid #555; padding:5px;}
+  </style>
+
+  <script>
+    // Section navigation
+    const sections = document.querySelectorAll('section');
+    function showSection(id){
+      sections.forEach(s=>s.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+    }
+
+    // Show home on load
+    showSection('home');
+
+    // Responsive adjustments
+    function adjustLayout(){
+      if(window.innerWidth < 600){
+        document.querySelectorAll('div').forEach(d=>d.style.flexWrap='wrap');
+      } else {
+        document.querySelectorAll('div').forEach(d=>d.style.flexWrap='nowrap');
+      }
+    }
+    window.addEventListener('resize', adjustLayout);
+    adjustLayout();
+
+    // Global auto-save hook
+    setInterval(()=>{
+      saveCustomSongs();
+      localStorage.setItem('avatarState', JSON.stringify(avatarState));
+      localStorage.setItem('playerData', JSON.stringify(player));
+      localStorage.setItem('practiceData', JSON.stringify(practiceData));
+      console.log('Auto-saved all data');
+    }, 120000); // 2 minutes
+  </script>
