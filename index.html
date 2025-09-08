@@ -368,3 +368,28 @@ function simulatePlaySong(songName){
 // ---------- SAMPLE USAGE ----------
 // Uncomment to simulate starting Twinkle
 // simulatePlaySong('Twinkle');
+  </script>
+
+<!-- ---------- CHARACTER CUSTOMIZER PAGE (OPTIONAL) ---------- -->
+<div id="characterPage" class="page">
+  <h2>Character Customizer</h2>
+  <div id="character"></div>
+  <div class="row">
+    <button onclick="customizeAvatar('head','red')">Red Head</button>
+    <button onclick="customizeAvatar('head','blue')">Blue Head</button>
+    <button onclick="customizeAvatar('body','green')">Green Body</button>
+    <button onclick="customizeAvatar('body','purple')">Purple Body</button>
+  </div>
+  <button onclick="goToPage('homePage')">Back</button>
+</div>
+
+<!-- ---------- MINI-GAME PAGE (OPTIONAL) ---------- -->
+<div id="miniGamePage" class="page">
+  <h2>Mini-Game</h2>
+  <div id="minigameContainer"></div>
+  <button onclick="startMiniGame()">Start Mini-Game</button>
+  <button onclick="goToPage('homePage')">Back</button>
+</div>
+
+</body>
+</html>
